@@ -38,10 +38,14 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     Navigator.pop(
       context,
       {
+        "id": DateTime.now().millisecondsSinceEpoch,
         "title": titleController.text,
         "amount":
             double.tryParse(amountController.text) ?? 0,
         "category": selectedCategory,
+        "date": DateTime.now()
+            .toIso8601String()
+            .substring(0, 10),
       },
     );
   }
@@ -58,39 +62,26 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           children: [
             TextField(
               controller: titleController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: "Titre",
-                border: OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius.circular(15),
-                ),
+                border: OutlineInputBorder(),
               ),
             ),
-
             const SizedBox(height: 20),
-
             TextField(
               controller: amountController,
               keyboardType: TextInputType.number,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: "Montant",
-                border: OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius.circular(15),
-                ),
+                border: OutlineInputBorder(),
               ),
             ),
-
             const SizedBox(height: 20),
-
             DropdownButtonFormField<String>(
               value: selectedCategory,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: "Catégorie",
-                border: OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius.circular(15),
-                ),
+                border: OutlineInputBorder(),
               ),
               items: categories.map((category) {
                 return DropdownMenuItem(
@@ -104,18 +95,14 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 });
               },
             ),
-
             const SizedBox(height: 30),
-
             SizedBox(
               width: double.infinity,
               height: 55,
               child: ElevatedButton.icon(
                 onPressed: saveExpense,
                 icon: const Icon(Icons.save),
-                label: const Text(
-                  "Enregistrer",
-                ),
+                label: const Text("Enregistrer"),
               ),
             ),
           ],
