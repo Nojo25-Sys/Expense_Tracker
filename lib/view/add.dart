@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
+
+import '../models/expense.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   const AddExpenseScreen({super.key});
@@ -35,18 +38,29 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       return;
     }
 
+    final amount = double.tryParse(amountController.text);
+    if (amount == null || amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Le montant doit être supérieur à 0",
+          ),
+        ),
+      );
+      return;
+    }
+
+    const uuid = Uuid();
+    
     Navigator.pop(
       context,
-      {
-        "id": DateTime.now().millisecondsSinceEpoch,
-        "title": titleController.text,
-        "amount":
-            double.tryParse(amountController.text) ?? 0,
-        "category": selectedCategory,
-        "date": DateTime.now()
-            .toIso8601String()
-            .substring(0, 10),
-      },
+      Expense(
+        id: uuid.v4(),
+        title: titleController.text,
+        amount: amount,
+        category: selectedCategory,
+        date: DateTime.now(),
+      ),
     );
   }
 

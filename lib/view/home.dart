@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
+import '../models/expense.dart';
 import '../services/hive_service.dart';
 import 'add.dart';
+import 'dashboard.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,7 +14,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  List<Map<String, dynamic>> expenses = [];
+  List<Expense> expenses = [];
 
   String selectedFilter = "Toutes";
 
@@ -40,7 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
   double get total {
     return expenses.fold(
       0.0,
-      (sum, item) => sum + (item["amount"] as double),
+      (sum, item) => sum + item.amount,
     );
   }
 
@@ -61,7 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> deleteExpense(int id) async {
+  Future<void> deleteExpense(String id) async {
     await HiveService.deleteExpenseById(id);
 
     setState(() {
@@ -105,13 +108,26 @@ class _HomeScreenState extends State<HomeScreen> {
         selectedFilter == "Toutes"
             ? expenses
             : expenses.where((expense) {
-                return expense["category"] == selectedFilter;
+                return expense.category == selectedFilter;
               }).toList();
 
     return Scaffold(
       appBar: AppBar(
         title: const Text("Gestion des Dépenses"),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.pie_chart),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const DashboardScreen(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
 
       floatingActionButton: FloatingActionButton(
@@ -197,7 +213,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                       return Dismissible(
                         key: Key(
-                          expense["id"].toString(),
+                          expense.id,
                         ),
                         direction:
                             DismissDirection.endToStart,
@@ -227,7 +243,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         onDismissed: (_) {
                           deleteExpense(
-                            expense["id"],
+                            expense.id,
                           );
                         },
                         child: Card(
@@ -256,14 +272,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                   Colors.indigo.shade100,
                               child: Icon(
                                 getCategoryIcon(
-                                  expense["category"],
+                                  expense.category,
                                 ),
                                 color: Colors.indigo,
                               ),
                             ),
 
                             title: Text(
-                              expense["title"],
+                              expense.title,
                               style:
                                   const TextStyle(
                                 fontWeight:
@@ -281,10 +297,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                   height: 4,
                                 ),
                                 Text(
-                                  expense["category"],
+                                  expense.category,
                                 ),
                                 Text(
-                                  expense["date"],
+                                  DateFormat('dd MMM yyyy', 'fr').format(expense.date),
                                   style:
                                       const TextStyle(
                                     fontSize: 12,
@@ -299,7 +315,7 @@ class _HomeScreenState extends State<HomeScreen> {
   mainAxisSize: MainAxisSize.min,
   children: [
     Text(
-      "${expense["amount"]} FCFA",
+      "${expense.amount} FCFA",
       style: const TextStyle(
         fontWeight: FontWeight.bold,
       ),
@@ -310,7 +326,7 @@ class _HomeScreenState extends State<HomeScreen> {
         color: Colors.red,
       ),
       onPressed: () {
-        deleteExpense(expense["id"]);
+        deleteExpense(expense.id);
       },
     ),
   ],
