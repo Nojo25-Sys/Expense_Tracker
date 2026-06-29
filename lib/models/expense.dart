@@ -27,7 +27,7 @@ class Expense {
     return Expense(
       id: map['id'],
       title: map['title'],
-      amount: map['amount'],
+      amount: (map['amount'] as num).toDouble(),
       category: map['category'],
       date: DateTime.parse(map['date']),
     );

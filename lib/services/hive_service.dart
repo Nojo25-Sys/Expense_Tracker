@@ -8,6 +8,19 @@ class HiveService {
     await box.add(expense.toMap());
   }
 
+  static Future<void> updateExpense(Expense expense) async {
+    final keys = box.keys.toList();
+
+    for (var key in keys) {
+      final item = Map<String, dynamic>.from(box.get(key));
+
+      if (item["id"] == expense.id) {
+        await box.put(key, expense.toMap());
+        break;
+      }
+    }
+  }
+
   static List<Expense> getExpenses() {
     return box.values
         .map((e) => Expense.fromMap(e))

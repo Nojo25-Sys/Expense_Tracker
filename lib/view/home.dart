@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../models/expense.dart';
 import '../services/hive_service.dart';
+import '../services/theme_service.dart';
 import 'add.dart';
 import 'dashboard.dart';
 
@@ -15,6 +16,9 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   List<Expense> expenses = [];
+  String searchQuery = "";
+  DateTime? startDate;
+  DateTime? endDate;
 
   String selectedFilter = "Toutes";
 
@@ -80,6 +84,31 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> editExpense(Expense expense) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddExpenseScreen(expense: expense),
+      ),
+    );
+
+    if (result != null) {
+      await HiveService.updateExpense(result);
+
+      setState(() {
+        expenses = HiveService.getExpenses();
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Dépense modifiée"),
+          ),
+        );
+      }
+    }
+  }
+
   IconData getCategoryIcon(String category) {
     switch (category) {
       case "Nourriture":
@@ -104,18 +133,28 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredExpenses =
-        selectedFilter == "Toutes"
-            ? expenses
-            : expenses.where((expense) {
-                return expense.category == selectedFilter;
-              }).toList();
+    final filteredExpenses = expenses.where((expense) {
+      final matchesCategory = selectedFilter == "Toutes" || expense.category == selectedFilter;
+      final matchesSearch = searchQuery.isEmpty || 
+          expense.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
+          expense.category.toLowerCase().contains(searchQuery.toLowerCase());
+      final matchesDate = (startDate == null || expense.date.isAfter(startDate!.subtract(const Duration(days: 1)))) &&
+                          (endDate == null || expense.date.isBefore(endDate!.add(const Duration(days: 1))));
+      return matchesCategory && matchesSearch && matchesDate;
+    }).toList();
 
     return Scaffold(
       appBar: AppBar(
         title: const Text("Gestion des Dépenses"),
         centerTitle: true,
         actions: [
+          IconButton(
+            icon: Icon(ThemeService.isDarkMode ? Icons.light_mode : Icons.dark_mode),
+            onPressed: () async {
+              await ThemeService.setDarkMode(!ThemeService.isDarkMode);
+              setState(() {});
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.pie_chart),
             onPressed: () {
@@ -167,6 +206,92 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
+
+          // Barre de recherche
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: "Rechercher une dépense...",
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  searchQuery = value;
+                });
+              },
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // Filtre par date
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: startDate ?? DateTime.now(),
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          startDate = picked;
+                        });
+                      }
+                    },
+                    icon: const Icon(Icons.calendar_today),
+                    label: Text(
+                      startDate == null ? "Date début" : DateFormat('dd/MM/yyyy').format(startDate!),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: endDate ?? DateTime.now(),
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          endDate = picked;
+                        });
+                      }
+                    },
+                    icon: const Icon(Icons.calendar_today),
+                    label: Text(
+                      endDate == null ? "Date fin" : DateFormat('dd/MM/yyyy').format(endDate!),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: () {
+                    setState(() {
+                      startDate = null;
+                      endDate = null;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 10),
 
           // Filtres
           SizedBox(
@@ -319,6 +444,15 @@ class _HomeScreenState extends State<HomeScreen> {
       style: const TextStyle(
         fontWeight: FontWeight.bold,
       ),
+    ),
+    IconButton(
+      icon: const Icon(
+        Icons.edit_outlined,
+        color: Colors.blue,
+      ),
+      onPressed: () {
+        editExpense(expense);
+      },
     ),
     IconButton(
       icon: const Icon(

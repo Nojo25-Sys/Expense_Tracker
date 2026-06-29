@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+import 'services/theme_service.dart';
 import 'view/home.dart';
 
 void main() async {
@@ -10,24 +11,27 @@ void main() async {
   await initializeDateFormatting('fr');
   await Hive.initFlutter();
   await Hive.openBox('expenses');
+  await Hive.openBox('settings');
 
   runApp(const ExpenseTracker());
 }
 
-class ExpenseTracker extends StatelessWidget {
+class ExpenseTracker extends StatefulWidget {
   const ExpenseTracker({super.key});
 
+  @override
+  State<ExpenseTracker> createState() => _ExpenseTrackerState();
+}
+
+class _ExpenseTrackerState extends State<ExpenseTracker> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Expense Tracker',
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.indigo,
-        ),
-      ),
+      theme: ThemeService.lightTheme,
+      darkTheme: ThemeService.darkTheme,
+      themeMode: ThemeService.isDarkMode ? ThemeMode.dark : ThemeMode.light,
       home: const HomeScreen(),
     );
   }

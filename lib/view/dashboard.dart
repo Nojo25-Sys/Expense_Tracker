@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../models/expense.dart';
 import '../services/hive_service.dart';
+import '../services/theme_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -11,6 +12,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  final TextEditingController budgetController = TextEditingController();
   List<Expense> expenses = [];
 
   @override
@@ -52,6 +54,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return categoryMap.entries
         .reduce((a, b) => a.value > b.value ? a : b)
         .key;
+  }
+
+  double get currentMonthExpenses {
+    final now = DateTime.now();
+    return expenses
+        .where((expense) =>
+            expense.date.year == now.year && expense.date.month == now.month)
+        .fold(0.0, (sum, expense) => sum + expense.amount);
+  }
+
+  double get budgetProgress {
+    final budget = BudgetService.monthlyBudget;
+    if (budget == 0) return 0.0;
+    return currentMonthExpenses / budget;
   }
 
   List<PieChartSectionData> get pieChartData {
@@ -96,11 +112,72 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }).toList();
   }
 
+  List<FlSpot> get monthlyChartData {
+    final now = DateTime.now();
+    final monthlyData = <int, double>{};
+
+    for (var expense in expenses) {
+      final monthKey = expense.date.year * 100 + expense.date.month;
+      monthlyData[monthKey] = (monthlyData[monthKey] ?? 0) + expense.amount;
+    }
+
+    final spots = <FlSpot>[];
+    for (int i = 5; i >= 0; i--) {
+      final date = DateTime(now.year, now.month - i, 1);
+      final key = date.year * 100 + date.month;
+      final value = monthlyData[key] ?? 0.0;
+      spots.add(FlSpot(i.toDouble(), value));
+    }
+
+    return spots;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Statistiques"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () async {
+              budgetController.text = BudgetService.monthlyBudget.toStringAsFixed(0);
+              final result = await showDialog<double>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text("Modifier le budget mensuel"),
+                  content: TextField(
+                    controller: budgetController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: "Budget (FCFA)",
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text("Annuler"),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        final value = double.tryParse(budgetController.text);
+                        if (value != null && value > 0) {
+                          Navigator.pop(context, value);
+                        }
+                      },
+                      child: const Text("Enregistrer"),
+                    ),
+                  ],
+                ),
+              );
+              if (result != null) {
+                await BudgetService.setMonthlyBudget(result);
+                setState(() {});
+              }
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -124,12 +201,54 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
               ),
+            if (expenses.isNotEmpty)
+              Container(
+                height: 250,
+                margin: const EdgeInsets.only(bottom: 20),
+                child: Card(
+                  elevation: 4,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        const Text(
+                          "Évolution mensuelle",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Expanded(
+                          child: LineChart(
+                            LineChartData(
+                              gridData: const FlGridData(show: false),
+                              titlesData: const FlTitlesData(show: false),
+                              borderData: FlBorderData(show: false),
+                              lineBarsData: [
+                                LineChartBarData(
+                                  spots: monthlyChartData,
+                                  isCurved: true,
+                                  color: Colors.indigo,
+                                  barWidth: 3,
+                                  dotData: const FlDotData(show: true),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               crossAxisCount: 2,
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
+              childAspectRatio: 1.2,
               children: [
                   _buildStatCard(
                     "Total Dépenses",
@@ -154,6 +273,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     "${averageExpense.toStringAsFixed(0)} FCFA",
                     Icons.trending_up,
                     Colors.purple,
+                  ),
+                  _buildStatCard(
+                    "Budget du mois",
+                    "${currentMonthExpenses.toStringAsFixed(0)} / ${BudgetService.monthlyBudget.toStringAsFixed(0)} FCFA",
+                    Icons.account_balance,
+                    budgetProgress > 1.0 ? Colors.red : Colors.teal,
+                  ),
+                  _buildStatCard(
+                    "Progression",
+                    "${(budgetProgress * 100).toStringAsFixed(0)}%",
+                    Icons.pie_chart_outline,
+                    budgetProgress > 0.8 ? Colors.orange : Colors.blue,
                   ),
                 ],
               ),

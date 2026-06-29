@@ -33,7 +33,7 @@ Expense Tracker est une application mobile et desktop qui permet de gérer vos d
 
 1. Clonez le repository :
 ```bash
-git clone <repository-url>
+git clone https://github.com/Nojo25-Sys/Expense_Tracker.git
 cd expense_tracker
 ```
 

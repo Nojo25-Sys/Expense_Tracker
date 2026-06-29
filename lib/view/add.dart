@@ -4,7 +4,9 @@ import 'package:uuid/uuid.dart';
 import '../models/expense.dart';
 
 class AddExpenseScreen extends StatefulWidget {
-  const AddExpenseScreen({super.key});
+  final Expense? expense;
+
+  const AddExpenseScreen({super.key, this.expense});
 
   @override
   State<AddExpenseScreen> createState() => _AddExpenseScreenState();
@@ -24,6 +26,16 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     "Loisirs",
     "Autres",
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.expense != null) {
+      titleController.text = widget.expense!.title;
+      amountController.text = widget.expense!.amount.toString();
+      selectedCategory = widget.expense!.category;
+    }
+  }
 
   void saveExpense() {
     if (titleController.text.isEmpty ||
@@ -52,23 +64,22 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
     const uuid = Uuid();
     
-    Navigator.pop(
-      context,
-      Expense(
-        id: uuid.v4(),
-        title: titleController.text,
-        amount: amount,
-        category: selectedCategory,
-        date: DateTime.now(),
-      ),
+    final expense = Expense(
+      id: widget.expense?.id ?? uuid.v4(),
+      title: titleController.text,
+      amount: amount,
+      category: selectedCategory,
+      date: widget.expense?.date ?? DateTime.now(),
     );
+    
+    Navigator.pop(context, expense);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Ajouter une dépense"),
+        title: Text(widget.expense == null ? "Ajouter une dépense" : "Modifier une dépense"),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
