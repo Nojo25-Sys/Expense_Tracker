@@ -4,8 +4,10 @@ import 'package:intl/intl.dart';
 import '../models/expense.dart';
 import '../services/hive_service.dart';
 import '../services/theme_service.dart';
+import '../services/csv_service.dart';
 import 'add.dart';
 import 'dashboard.dart';
+import 'settings.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -69,18 +71,39 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> deleteExpense(String id) async {
-    await HiveService.deleteExpenseById(id);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Confirmer la suppression"),
+        content: const Text("Êtes-vous sûr de vouloir supprimer cette dépense ?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Annuler"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text("Supprimer"),
+          ),
+        ],
+      ),
+    );
 
-    setState(() {
-      expenses = HiveService.getExpenses();
-    });
+    if (confirmed == true) {
+      await HiveService.deleteExpenseById(id);
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Dépense supprimée"),
-        ),
-      );
+      setState(() {
+        expenses = HiveService.getExpenses();
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Dépense supprimée"),
+          ),
+        );
+      }
     }
   }
 
@@ -149,6 +172,12 @@ class _HomeScreenState extends State<HomeScreen> {
         centerTitle: true,
         actions: [
           IconButton(
+            icon: const Icon(Icons.download),
+            onPressed: () async {
+              await CsvService.exportToCsv(expenses);
+            },
+          ),
+          IconButton(
             icon: Icon(ThemeService.isDarkMode ? Icons.light_mode : Icons.dark_mode),
             onPressed: () async {
               await ThemeService.setDarkMode(!ThemeService.isDarkMode);
@@ -162,6 +191,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 context,
                 MaterialPageRoute(
                   builder: (_) => const DashboardScreen(),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const SettingsScreen(),
                 ),
               );
             },
