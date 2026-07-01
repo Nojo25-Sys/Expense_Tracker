@@ -136,7 +136,15 @@ lib/
 - **Budget du mois** : Dépenses actuelles / budget mensuel
 - **Progression** : Pourcentage du budget utilisé
 
-## 📝 Développement
+### Tests
+
+- **expense_test.dart** : Tests unitaires du modèle Expense
+  - Création avec données valides
+  - Conversion toMap/fromMap
+  - Sécurité de type (int → double)
+  - Round-trip conversion
+
+Note: Les tests d'intégration HiveService nécessitent une refonte de l'architecture pour permettre le mocking de Hive. Pour l'instant, seuls les tests unitaires du modèle sont disponibles.
 
 ### Commandes utiles
 
