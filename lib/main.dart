@@ -26,13 +26,18 @@ class ExpenseTracker extends StatefulWidget {
 class _ExpenseTrackerState extends State<ExpenseTracker> {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Expense Tracker',
-      theme: ThemeService.lightTheme,
-      darkTheme: ThemeService.darkTheme,
-      themeMode: ThemeService.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-      home: const HomeScreen(),
+    return ValueListenableBuilder<bool>(
+      valueListenable: ThemeService.darkModeNotifier,
+      builder: (context, isDarkMode, child) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Expense Tracker',
+          theme: ThemeService.lightTheme,
+          darkTheme: ThemeService.darkTheme,
+          themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
+          home: const HomeScreen(),
+        );
+      },
     );
   }
 }

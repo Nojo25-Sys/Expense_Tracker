@@ -1,7 +1,5 @@
 import 'package:csv/csv.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'dart:io';
 import 'package:intl/intl.dart';
 
 import '../models/expense.dart';
@@ -24,14 +22,9 @@ class CsvService {
 
     final csvData = const ListToCsvConverter().convert(rows);
 
-    final directory = await getTemporaryDirectory();
-    final file = File('${directory.path}/expenses_export.csv');
-    await file.writeAsString(csvData);
-
-    await Share.shareXFiles(
-      [XFile(file.path)],
+    await Share.share(
+      csvData,
       subject: 'Export des dépenses',
-      text: 'Voici l\'export de vos dépenses au format CSV.',
     );
   }
 }

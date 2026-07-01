@@ -33,13 +33,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           Card(
-            child: SwitchListTile(
-              title: const Text("Mode sombre"),
-              subtitle: const Text("Activer le thème sombre"),
-              value: ThemeService.isDarkMode,
-              onChanged: (value) async {
-                await ThemeService.setDarkMode(value);
-                setState(() {});
+            child: ValueListenableBuilder<bool>(
+              valueListenable: ThemeService.darkModeNotifier,
+              builder: (context, isDarkMode, child) {
+                return SwitchListTile(
+                  title: const Text("Mode sombre"),
+                  subtitle: const Text("Activer le thème sombre"),
+                  value: isDarkMode,
+                  onChanged: (value) async {
+                    await ThemeService.setDarkMode(value);
+                  },
+                );
               },
             ),
           ),
@@ -103,14 +107,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Card(
             child: ListTile(
               leading: const Icon(Icons.info_outline),
-              title: const Text("À propos"),
-              subtitle: const Text("Expense Tracker V2.1"),
+              title: const Text("Outils utilisés"),
+              subtitle: const Text("Flutter, Hive, fl_chart, csv, share_plus"),
               onTap: () {
                 showAboutDialog(
                   context: context,
                   applicationName: "Expense Tracker",
-                  applicationVersion: "2.1.0",
-                  applicationLegalese: "© 2026 Personal Finance Dashboard",
+                  applicationVersion: "2.2.0",
                 );
               },
             ),

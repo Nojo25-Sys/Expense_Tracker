@@ -5,12 +5,17 @@ class ThemeService {
   static const String _themeKey = 'isDarkMode';
   static final Box _settingsBox = Hive.box('settings');
 
-  static bool get isDarkMode {
-    return _settingsBox.get(_themeKey, defaultValue: false);
-  }
+  static final ValueNotifier<bool> _darkModeNotifier = ValueNotifier<bool>(
+    _settingsBox.get(_themeKey, defaultValue: false),
+  );
+
+  static ValueNotifier<bool> get darkModeNotifier => _darkModeNotifier;
+
+  static bool get isDarkMode => _darkModeNotifier.value;
 
   static Future<void> setDarkMode(bool value) async {
     await _settingsBox.put(_themeKey, value);
+    _darkModeNotifier.value = value;
   }
 
   static ThemeData getTheme(BuildContext context) {

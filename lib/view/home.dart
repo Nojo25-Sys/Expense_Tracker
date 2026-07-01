@@ -181,7 +181,6 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(ThemeService.isDarkMode ? Icons.light_mode : Icons.dark_mode),
             onPressed: () async {
               await ThemeService.setDarkMode(!ThemeService.isDarkMode);
-              setState(() {});
             },
           ),
           IconButton(
